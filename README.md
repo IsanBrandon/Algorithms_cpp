@@ -1,2 +1,2 @@
 # Algorithms_cpp
-Algorithm practice from university coursework
+2026년 1학기 PKNU 알고리즘
