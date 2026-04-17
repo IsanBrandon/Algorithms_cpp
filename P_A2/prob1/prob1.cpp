@@ -1,169 +1,248 @@
-/*  Total words: 125,553
- *  ---------- Sorting Times ----------
- *  Bubble Sort: 0.0036808 sec
- *  Insertion Sort: 337.581 sec
- *  Merge Sort: 1.26245 sec
- *  Quick Sort (last pivot): 6e-07 sec
- *  Heap Sort: 0.3449 sec
- *  Library Sort: 0.108119 sec
- *  -----------------------------------
- */
+//  Total words: 125,553
+//  ---------- Sorting Times ----------
+//  Bubble Sort: 0.0036808 sec
+//  Insertion Sort: 337.581 sec
+//  Merge Sort: 1.26245 sec
+//  Quick Sort (last pivot): 6e-07 sec
+//  Heap Sort: 0.3449 sec
+//  Library Sort: 0.108119 sec
+//  -----------------------------------
 
-#include <iostream>     // cout, cerr
-#include <fstream>      // ifstream
-#include <vector>       // vector
-#include <string>       // string
-#include <chrono>       // for time measurement
-#include <algorithm>    // swap, sort for library sort
+#include <iostream>     // cout, cin 사용
+#include <fstream>      // 파일 읽기 (ifstream)
+#include <sstream>      // 문자열 분리 (stringstream)
+#include <vector>       // vector 사용
+#include <string>       // string 사용
+#include <algorithm>    // sort (표준 라이브러리 정렬)
+#include <chrono>       // 시간 측정
 
 using namespace std;
-using namespace chrono; // chrono::high_resolution_clock 같은 시간 관련 이름을 간단히 쓰기 위해
 
-// ---------------- Bubble Sort ---------------- 
-// 인접한 두 원소를 비교하며 큰 값을 오른쪽으로 밀어가는 방식
-void bubbleSort(vector<string>& arr) {          // 배열을 참조로 받아서 직접 정렬한다. (복사본이 아니라 원본을 수정)
-    int n = (int)arr.size();                    // C++17에서는 size()가 size_t이므로 명시적으로 int로 형변환 해줘야
-    for (int i = 0; i < n - 1; i++) {           // n-1번 반복 & 매 번 마다 가장 큰 원소 하나가 맨 뒤로 이동 
-        bool swapped = false;                   // 이 번 반복에서 교환이 일어났는지 체크하는 플래그 - 이미 정렬된 경우 불필요한 반복을 줄이기 위해
-        for (int j = 0; j < n - 1 - i; i++) {   // 뒤쪽 i개 구간은 이미 정렬이 끝났으니 볼 필요가 없어서 n - 1 - i까지만 돈다.
-            if (arr[j] > arr[j + 1]) {          // 예: "zebra" > "apple"이면 자리 바꿈이 필요하다.
-                swap(arr[j], arr[j + 1]);       // 두 문자열의 위치를 교환
-                swapped = true;                 // 교환이 일어났음을 표시. 만약 이 반복이 끝날 때까지 swapped가 false라면 이미 정렬이 완료된 상태이므로 더 이상 반복할 필요가 없다.
+// ------------------------------
+// 버블 정렬
+// ------------------------------
+void bubbleSort(vector<string>& arr) {   // 원본 배열을 직접 수정하기 위해 참조 사용
+    int n = (int)arr.size();             // 배열 크기 저장
+
+    for (int i = 0; i < n - 1; i++) {    // 전체 패스 반복 (n-1번)
+        for (int j = 0; j < n - i - 1; j++) {  // 뒤에서 i개는 이미 정렬됨
+            if (arr[j] > arr[j + 1]) {   // 현재 값이 다음 값보다 크면
+                swap(arr[j], arr[j + 1]); // 두 값을 교환
             }
         }
-        if (!swapped) break;                    // 한 번도 교환이 없었다면 이미 정렬 완료 상태이므로 반복 종료
     }
 }
 
-// ---------------- Insertion Sort ----------------
-void insertionSort(vector<string>& arr) {       // 배열 자체 수정
-    int n = (int)arr.size();                    // 배열 길이 구하기
-    for (int i = 1; i < n; i++) {               
-        string key = arr[i];
-        int j = i - 1;
-        while (j >= 0 && arr[j] > key) {
+// ------------------------------
+// 삽입 정렬
+// ------------------------------
+void insertionSort(vector<string>& arr) {
+    int n = (int)arr.size();
+
+    for (int i = 1; i < n; i++) {        // 두 번째 원소부터 시작
+        string key = arr[i];             // 현재 삽입할 값 저장
+        int j = i - 1;                   // 이전 위치부터 비교 시작
+
+        while (j >= 0 && arr[j] > key) { // key보다 큰 값들을 오른쪽으로 이동
             arr[j + 1] = arr[j];
             j--;
         }
-        arr[j + 1] = key;
+        arr[j + 1] = key;                // 올바른 위치에 key 삽입
     }
 }
 
-// ---------------- Merge Sort ----------------
+// ------------------------------
+// 병합 정렬 - merge 함수
+// ------------------------------
 void merge(vector<string>& arr, int left, int mid, int right) {
-    vector<string> temp;
-    int i = left, j = mid + 1;
+    int n1 = mid - left + 1;             // 왼쪽 부분 배열 크기
+    int n2 = right - mid;                // 오른쪽 부분 배열 크기
 
-    while (i <= mid && j <= right) {
-        if (arr[i] <= arr[j]) temp.push_back(arr[i++]);
-        else temp.push_back(arr[j++]);
-    }
-    while (i <= mid) temp.push_back(arr[i++]);
-    while (j <= right) temp.push_back(arr[j++]);
+    vector<string> L(n1), R(n2);         // 임시 배열 생성
 
-    for (int k = 0; k < (int)temp.size(); k++) {
-        arr[left + k] = temp[k];
-    }
-}
+    for (int i = 0; i < n1; i++)         // 왼쪽 배열 복사
+        L[i] = arr[left + i];
 
-void mergeSort(vector<string>& arr, int left, int right) {
-    if (left >= right) return;
-    int mid = left + (right - left) / 2;
-    mergeSort(arr, left, mid);
-    mergeSort(arr, mid + 1, right);
-    merge(arr, left, mid, right);
-}
+    for (int i = 0; i < n2; i++)         // 오른쪽 배열 복사
+        R[i] = arr[mid + 1 + i];
 
-// ---------------- Quick Sort (last pivot) ----------------
-int partitionLastPivot(vector<string>& arr, int left, int right) {
-    string pivot = arr[right];
-    int i = left - 1;
+    int i = 0, j = 0, k = left;          // i: L, j: R, k: 원본 배열
 
-    for (int j = left; j < right; j++) {
-        if (arr[j] <= pivot) {
-            i++;
-            swap(arr[i], arr[j]);
+    while (i < n1 && j < n2) {           // 두 배열 비교
+        if (L[i] <= R[j]) {
+            arr[k++] = L[i++];           // 작은 값을 넣고 인덱스 증가
+        } else {
+            arr[k++] = R[j++];
         }
     }
-    swap(arr[i + 1], arr[right]);
-    return i + 1;
+
+    while (i < n1)                       // 남은 L 처리
+        arr[k++] = L[i++];
+
+    while (j < n2)                       // 남은 R 처리
+        arr[k++] = R[j++];
 }
 
-void quickSort(vector<string>& arr, int left, int right) {
-    if (left < right) return;
-    int p = partitionLastPivot(arr, left, right);
-    quickSort(arr, left, p - 1);
-    quickSort(arr, p + 1, right);
+// ------------------------------
+// 병합 정렬 - 재귀 함수
+// ------------------------------
+void mergeSort(vector<string>& arr, int left, int right) {
+    if (left >= right) return;           // 원소가 1개면 종료
+
+    int mid = (left + right) / 2;        // 중간 위치 계산
+
+    mergeSort(arr, left, mid);           // 왼쪽 정렬
+    mergeSort(arr, mid + 1, right);      // 오른쪽 정렬
+
+    merge(arr, left, mid, right);        // 병합
 }
 
-// ---------------- Heap Sort ----------------
-void heapify(vector<string>& arr, int n, int i) {
-    int largest = i;
-    int left = 2 * i + 1;
-    int right = 2 * i + 2;
+// ------------------------------
+// 퀵 정렬 - partition
+// ------------------------------
+int partition(vector<string>& arr, int low, int high) {
+    string pivot = arr[high];            // 마지막 원소를 pivot으로 선택
+    int i = low - 1;                     // 작은 값들의 마지막 위치
 
-    if (left < n && arr[left] > arr[largest]) largest = left;
-    if (right < n && arr[right] > arr[largest]) largest = right;
+    for (int j = low; j < high; j++) {   // 전체 순회
+        if (arr[j] < pivot) {            // pivot보다 작으면
+            i++;
+            swap(arr[i], arr[j]);        // 앞쪽으로 이동
+        }
+    }
 
-    if (largest != i) {
-        swap(arr[i], arr[largest]);
-        heapify(arr, n, largest); 
+    swap(arr[i + 1], arr[high]);         // pivot을 가운데로 이동
+    return i + 1;                        // pivot 위치 반환
+}
+
+// ------------------------------
+// 퀵 정렬
+// ------------------------------
+void quickSort(vector<string>& arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);  // 분할 위치
+
+        quickSort(arr, low, pi - 1);         // 왼쪽 정렬
+        quickSort(arr, pi + 1, high);        // 오른쪽 정렬
     }
 }
 
+// ------------------------------
+// 힙 정렬 - heapify
+// ------------------------------
+void heapify(vector<string>& arr, int n, int i) {
+    int largest = i;                 // 가장 큰 값
+    int left = 2 * i + 1;            // 왼쪽 자식
+    int right = 2 * i + 2;           // 오른쪽 자식
+
+    if (left < n && arr[left] > arr[largest])
+        largest = left;
+
+    if (right < n && arr[right] > arr[largest])
+        largest = right;
+
+    if (largest != i) {
+        swap(arr[i], arr[largest]);  // 부모와 교환
+        heapify(arr, n, largest);    // 재귀적으로 heap 유지
+    }
+}
+
+// ------------------------------
+// 힙 정렬
+// ------------------------------
 void heapSort(vector<string>& arr) {
     int n = (int)arr.size();
 
-    for (int i = n / 2 - 1; i >= 0; i--) {
+    for (int i = n / 2 - 1; i >= 0; i--) // 최대 힙 구성
         heapify(arr, n, i);
-    }
 
     for (int i = n - 1; i > 0; i--) {
-        swap(arr[0], arr[i]);
-        heapify(arr, i, 0); 
+        swap(arr[0], arr[i]);       // 최대값을 뒤로 이동
+        heapify(arr, i, 0);         // 힙 재구성
     }
 }
 
-// ---------------- Time Measurement Helper ----------------
-template <typename Func>
-double measureSortTime(const vector<string>& original, Func sortFunc) {
-    vector<string> arr = original;
-
-    auto start = high_resolution_clock::now();
-    sortFunc(arr);
-    auto end = high_resolution_clock::now();
-
-    return duration<double>(end - start).count();
-}
-
+// ------------------------------
+// 메인 함수
+// ------------------------------
 int main() {
-    ifstream fin("harry_full.txt");
-    if (!fin) { cerr << "Error opening file!\n"; return 1; }
-
-    vector<string> original;
+    ifstream file("harry_full.txt");    // 파일 열기
+    vector<string> original;            // 원본 데이터 저장
     string word;
-    while (fin >> word) { original.push_back(word); }
-    fin.close();
 
-    cout << "Total words: " << original.size() << "\n\n";
+    while (file >> word) {              // 단어 단위로 읽기
+        original.push_back(word);       // 벡터에 저장
+    }
 
-    double t1 = measureSortTime(original, [](vector<string>& a) { bubbleSort(a);});
-    cout << "Bubble Sort: " << t1 << " sec\n";
+    file.close();                       // 파일 닫기
 
-    double t2 = measureSortTime(original, [](vector<string>& a) { insertionSort(a);});
-    cout << "Insertion Sort: " << t2 << " sec\n";
+    vector<string> arr;
 
-    double t3 = measureSortTime(original, [](vector<string>& a) { mergeSort(a, 0, (int)a.size() - 1);});
-    cout << "Merge Sort: " << t3 << " sec\n";
+    // ------------------------------
+    // Bubble Sort
+    // ------------------------------
+    arr = original; // 동일한 데이터 복사 (공정한 비교)
+    auto start = chrono::high_resolution_clock::now();
+    bubbleSort(arr);
+    auto end = chrono::high_resolution_clock::now();
+    cout << "Bubble Sort: "
+         << chrono::duration<double>(end - start).count()
+         << " sec\n";
 
-    double t4 = measureSortTime(original, [](vector<string>& a) { quickSort(a, 0, (int)a.size() - 1);});
-    cout << "Quick Sort (last pivot): " << t4 << " sec\n";
+    // ------------------------------
+    // Insertion Sort
+    // ------------------------------
+    arr = original;
+    start = chrono::high_resolution_clock::now();
+    insertionSort(arr);
+    end = chrono::high_resolution_clock::now();
+    cout << "Insertion Sort: "
+         << chrono::duration<double>(end - start).count()
+         << " sec\n";
 
-    double t5 = measureSortTime(original, [](vector<string>& a) { heapSort(a);});
-    cout << "Heap Sort: " << t5 << " sec\n";
+    // ------------------------------
+    // Merge Sort
+    // ------------------------------
+    arr = original;
+    start = chrono::high_resolution_clock::now();
+    mergeSort(arr, 0, arr.size() - 1);
+    end = chrono::high_resolution_clock::now();
+    cout << "Merge Sort: "
+         << chrono::duration<double>(end - start).count()
+         << " sec\n";
 
-    double t6 = measureSortTime(original, [](vector<string>& a) { sort(a.begin(), a.end());});
-    cout << "Library Sort: " << t6 << " sec\n";
+    // ------------------------------
+    // Quick Sort
+    // ------------------------------
+    arr = original;
+    start = chrono::high_resolution_clock::now();
+    quickSort(arr, 0, arr.size() - 1);
+    end = chrono::high_resolution_clock::now();
+    cout << "Quick Sort: "
+         << chrono::duration<double>(end - start).count()
+         << " sec\n";
+
+    // ------------------------------
+    // Heap Sort
+    // ------------------------------
+    arr = original;
+    start = chrono::high_resolution_clock::now();
+    heapSort(arr);
+    end = chrono::high_resolution_clock::now();
+    cout << "Heap Sort: "
+         << chrono::duration<double>(end - start).count()
+         << " sec\n";
+
+    // ------------------------------
+    // STL sort
+    // ------------------------------
+    arr = original;
+    start = chrono::high_resolution_clock::now();
+    sort(arr.begin(), arr.end());  // C++ 표준 정렬
+    end = chrono::high_resolution_clock::now();
+    cout << "STL sort: "
+         << chrono::duration<double>(end - start).count()
+         << " sec\n";
 
     return 0;
 }
